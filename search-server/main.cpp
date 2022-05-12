@@ -30,7 +30,7 @@ int ReadLineWithNumber() {
 vector<string> SplitIntoWords(const string& text) {
     vector<string> words;
     string word;
-    for (const char c : text) {
+    for (const char c: text) {
         if (c == ' ') {
             if (!word.empty()) {
                 words.push_back(word);
@@ -62,7 +62,7 @@ enum class DocumentStatus {
 class SearchServer {
 public:
     void SetStopWords(const string& text) {
-        for (const string& word : SplitIntoWords(text)) {
+        for (const string& word: SplitIntoWords(text)) {
             stop_words_.insert(word);
         }
     }
@@ -70,7 +70,7 @@ public:
     void AddDocument(int document_id, const string& document, DocumentStatus status, const vector<int>& ratings) {
         const vector<string> words = SplitIntoWordsNoStop(document);
         const double inv_word_count = 1.0 / words.size();
-        for (const string& word : words) {
+        for (const string& word: words) {
             word_to_document_freqs_[word][document_id] += inv_word_count;
         }
         documents_.emplace(document_id,
@@ -108,7 +108,7 @@ public:
     tuple<vector<string>, DocumentStatus> MatchDocument(const string& raw_query, int document_id) const {
         const Query query = ParseQuery(raw_query);
         vector<string> matched_words;
-        for (const string& word : query.plus_words) {
+        for (const string& word: query.plus_words) {
             if (word_to_document_freqs_.count(word) == 0) {
                 continue;
             }
@@ -116,7 +116,7 @@ public:
                 matched_words.push_back(word);
             }
         }
-        for (const string& word : query.minus_words) {
+        for (const string& word: query.minus_words) {
             if (word_to_document_freqs_.count(word) == 0) {
                 continue;
             }
@@ -144,7 +144,7 @@ private:
 
     vector<string> SplitIntoWordsNoStop(const string& text) const {
         vector<string> words;
-        for (const string& word : SplitIntoWords(text)) {
+        for (const string& word: SplitIntoWords(text)) {
             if (!IsStopWord(word)) {
                 words.push_back(word);
             }
@@ -157,7 +157,7 @@ private:
             return 0;
         }
         int rating_sum = 0;
-        for (const int rating : ratings) {
+        for (const int rating: ratings) {
             rating_sum += rating;
         }
         return rating_sum / static_cast<int>(ratings.size());
@@ -190,7 +190,7 @@ private:
 
     Query ParseQuery(const string& text) const {
         Query query;
-        for (const string& word : SplitIntoWords(text)) {
+        for (const string& word: SplitIntoWords(text)) {
             const QueryWord query_word = ParseQueryWord(word);
             if (!query_word.is_stop) {
                 if (query_word.is_minus) {
@@ -211,12 +211,12 @@ private:
     template <typename DocumentPredicate>
     vector<Document> FindAllDocuments(const Query& query, DocumentPredicate document_predicate) const {
         map<int, double> document_to_relevance;
-        for (const string& word : query.plus_words) {
+        for (const string& word: query.plus_words) {
             if (word_to_document_freqs_.count(word) == 0) {
                 continue;
             }
             const double inverse_document_freq = ComputeWordInverseDocumentFreq(word);
-            for (const auto [document_id, term_freq] : word_to_document_freqs_.at(word)) {
+            for (const auto [document_id, term_freq]: word_to_document_freqs_.at(word)) {
                 DocumentData found_document_info = documents_.at(document_id);
                 if (document_predicate(document_id, found_document_info.status, found_document_info.rating)) {
                     document_to_relevance[document_id] += term_freq * inverse_document_freq;
@@ -224,17 +224,17 @@ private:
             }
         }
 
-        for (const string& word : query.minus_words) {
+        for (const string& word: query.minus_words) {
             if (word_to_document_freqs_.count(word) == 0) {
                 continue;
             }
-            for (const auto [document_id, _] : word_to_document_freqs_.at(word)) {
+            for (const auto [document_id, _]: word_to_document_freqs_.at(word)) {
                 document_to_relevance.erase(document_id);
             }
         }
 
         vector<Document> matched_documents;
-        for (const auto [document_id, relevance] : document_to_relevance) {
+        for (const auto [document_id, relevance]: document_to_relevance) {
             matched_documents.push_back({
                                                 document_id,
                                                 relevance,
@@ -537,18 +537,18 @@ void TestCountingRelevanceIsCorrect(){
         const double inv_word_count2 = 1.0 / split_words_doc2.size();
         const vector<string> split_words_query = SplitIntoWords ("cat dog city"s);
         map <int, double> document_to_relevance;
-        for (const string word : split_words_doc) {
+        for (const string word: split_words_doc) {
             word_to_document_freqs[word][doc_id] += inv_word_count;
         }
-        for (const string word : split_words_doc2) {
+        for (const string word: split_words_doc2) {
             word_to_document_freqs[word][doc_id2] += inv_word_count2;
         }
-        for (const string& word : split_words_query) {
+        for (const string& word: split_words_query) {
             if (word_to_document_freqs.count(word) == 0) {
                 continue;
             }
             const double inverse_document_freq = log(server.GetDocumentCount() * 1.0 / word_to_document_freqs.at(word).size());
-            for (const auto [document_id, term_freq] : word_to_document_freqs.at(word)) {
+            for (const auto [document_id, term_freq]: word_to_document_freqs.at(word)) {
                 document_to_relevance[document_id] += term_freq * inverse_document_freq;
             }
         }
