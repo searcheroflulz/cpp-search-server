@@ -389,8 +389,8 @@ void TestFindDocumentWithSearchWords(){
         server.SetStopWords("in the");
         server.AddDocument(doc_id, content, DocumentStatus::ACTUAL, ratings);
         server.AddDocument(doc_id2, content2, DocumentStatus::ACTUAL, ratings);
-        const auto [matched_words, status] = server.MatchDocument("cat -dog in the city"s, doc_id);
-        ASSERT_EQUAL_HINT(matched_words, split_words_doc_no_stop, "Found docs");
+        const auto [returned_doc_words, status] = server.MatchDocument("cat -dog in the city"s, doc_id);
+        ASSERT_EQUAL_HINT(returned_doc_words, split_words_doc_no_stop, "Found docs");
         ASSERT_HINT(status == DocumentStatus::ACTUAL, "Checking Document status");
         const auto [returned_doc_words2, status2] = server.MatchDocument("cat -dog in the city"s, doc_id2);
         ASSERT_HINT(returned_doc_words2.empty(), "Docs with minus-words");
