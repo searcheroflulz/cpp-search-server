@@ -6,12 +6,13 @@
 #include <utility>
 #include <vector>
 #include <iostream>
+#include <numeric>
 
 using namespace std;
 
 /* Подставьте вашу реализацию класса SearchServer сюда */
 const int MAX_RESULT_DOCUMENT_COUNT = 5;
-const int SET_PRECISION = 1e-6;
+const double SET_PRECISION = 1e-6;
 
 string ReadLine() {
     string s;
@@ -250,7 +251,7 @@ private:
 template <typename Container>
 void Print(ostream& out, const Container& container) {
     bool is_first = true;
-    for (const auto& element : container) {
+    for (const auto& element: container) {
         if (!is_first) {
             out << ", "s;
         }
@@ -279,7 +280,7 @@ template <typename Key, typename Value>
 ostream& operator<<(ostream& os, const map<Key, Value>& container) {
     bool is_first = true;
     os << '{';
-    for (const auto& para:container){
+    for (const auto& para: container){
         if (!is_first){
             os << ", "s;
         }
@@ -388,11 +389,10 @@ void TestFindDocumentWithSearchWords(){
         server.SetStopWords("in the");
         server.AddDocument(doc_id, content, DocumentStatus::ACTUAL, ratings);
         server.AddDocument(doc_id2, content2, DocumentStatus::ACTUAL, ratings);
-        vector<string> returned_doc_words = get<vector<string>>(server.MatchDocument("cat -dog in the city"s, doc_id));
-        ASSERT_EQUAL_HINT(returned_doc_words, split_words_doc_no_stop, "Found docs");
-        DocumentStatus doc_status = get<DocumentStatus>(server.MatchDocument("cat -dog in the city"s, doc_id));
-        ASSERT_HINT(doc_status == DocumentStatus::ACTUAL, "Checking Document status");
-        vector<string> returned_doc_words2 = get<vector<string>>(server.MatchDocument("cat -dog in the city"s, doc_id2));
+        const auto [matched_words, status] = server.MatchDocument("cat -dog in the city"s, doc_id);
+        ASSERT_EQUAL_HINT(matched_words, split_words_doc_no_stop, "Found docs");
+        ASSERT_HINT(status == DocumentStatus::ACTUAL, "Checking Document status");
+        const auto [returned_doc_words2, status2] = server.MatchDocument("cat -dog in the city"s, doc_id2);
         ASSERT_HINT(returned_doc_words2.empty(), "Docs with minus-words");
     }
 }
@@ -428,13 +428,13 @@ void TestSortRelevance(){
         server.AddDocument(doc_id2, content2, DocumentStatus::ACTUAL, ratings);
         server.AddDocument(doc_id3, content3, DocumentStatus::ACTUAL, ratings);
         const auto found_docs = server.FindTopDocuments("cat in the city"s);
-        ASSERT_HINT(found_docs[0].relevance>found_docs[1].relevance, "Relevance test");
-        ASSERT(found_docs[0].relevance>found_docs[2].relevance);
+        ASSERT_HINT(found_docs[0].relevance > found_docs[1].relevance, "Relevance test");
+        ASSERT(found_docs[1].relevance > found_docs[2].relevance);
     }
 }
 
 // Тест подсчета рейтинга.
-void TestAverageRating(){
+void TestRatingCalculation(){
     const int doc_id = 42;
     const string content = "cat in the city"s;
     const vector<int> ratings = {1, 2, 3};
@@ -442,10 +442,7 @@ void TestAverageRating(){
         SearchServer server;
         server.AddDocument(doc_id, content, DocumentStatus::ACTUAL, ratings);
         const auto found_docs = server.FindTopDocuments("cat dog"s);
-        int average_rating=0;
-        for (const int rating: ratings){
-            average_rating += rating;
-        }
+        int average_rating = accumulate(ratings.begin(), ratings.end(), 0);
         average_rating = average_rating / static_cast<int>(ratings.size());
         ASSERT_EQUAL(found_docs[0].rating, average_rating);
     }
@@ -458,7 +455,7 @@ void TestPredicate(){
     const vector<int> ratings = {1, 2, 3};
     const int doc_id2 = 43;
     const string content2 = "cat in the downtown";
-    const vector <int> ratings2 = {3,2,6};
+    const vector <int> ratings2 = {3, 2, 6};
     {
         SearchServer server;
         server.AddDocument(doc_id, content, DocumentStatus::ACTUAL, ratings);
@@ -483,7 +480,7 @@ void TestPredicate(){
         server.AddDocument(doc_id, content, DocumentStatus::BANNED, ratings);
         server.AddDocument(doc_id2, content2, DocumentStatus::ACTUAL, ratings2);
         const auto found_docs = server.FindTopDocuments("cat in"s, [](int document_id, DocumentStatus status, int rating) { return rating == 3; });
-        ASSERT_HINT(found_docs.size() == 1, "Rating=3");
+        ASSERT_HINT(found_docs.size() == 1, "Rating = 3");
         const Document& doc0 = found_docs[0];
         ASSERT(doc0.id == doc_id2);
     }
@@ -519,7 +516,7 @@ void TestStatus(){
 }
 
 // Тест на вычисление релевантности.
-void TestCountingRelevansIsCorrect(){
+void TestCountingRelevanceIsCorrect(){
     const int doc_id = 42;
     const string content = "cat in the city"s;
     const vector<int> ratings = {1, 2, 3};
@@ -550,16 +547,15 @@ void TestCountingRelevansIsCorrect(){
             if (word_to_document_freqs.count(word) == 0) {
                 continue;
             }
-            const double inverse_document_freq = log(server.GetDocumentCount() * 1.0 / word_to_document_freqs.at(word).size());;
+            const double inverse_document_freq = log(server.GetDocumentCount() * 1.0 / word_to_document_freqs.at(word).size());
             for (const auto [document_id, term_freq] : word_to_document_freqs.at(word)) {
                 document_to_relevance[document_id] += term_freq * inverse_document_freq;
             }
         }
         double relevance = document_to_relevance[doc_id];
         double relevance2 = document_to_relevance[doc_id2];
-
-        ASSERT_EQUAL_HINT(abs(found_docs[0].relevance - relevance), SET_PRECISION, "Testing relevance counting");
-        ASSERT_EQUAL(abs(found_docs[1].relevance - relevance2), SET_PRECISION);
+        ASSERT_HINT(abs(found_docs[0].relevance - relevance) < SET_PRECISION, "Testing relevance counting");
+        ASSERT(abs(found_docs[1].relevance - relevance2) < SET_PRECISION);
     }
 }
 
@@ -570,10 +566,10 @@ void TestSearchServer() {
     RUN_TEST(TestFindDocumentWithSearchWords);
     RUN_TEST(TestSimpleSearchAndAddingDocuments);
     RUN_TEST(TestSortRelevance);
-    RUN_TEST(TestAverageRating);
+    RUN_TEST(TestRatingCalculation);
     RUN_TEST(TestPredicate);
     RUN_TEST(TestStatus);
-    RUN_TEST(TestCountingRelevansIsCorrect);
+    RUN_TEST(TestCountingRelevanceIsCorrect);
 }
 
 // --------- Окончание модульных тестов поисковой системы -----------
