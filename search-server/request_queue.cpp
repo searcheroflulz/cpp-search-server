@@ -2,7 +2,6 @@
 
 using namespace std;
 
-
 RequestQueue::RequestQueue(const SearchServer& search_server): server(search_server){}
 
 vector<Document> RequestQueue::AddFindRequest(const string& raw_query, DocumentStatus status) {

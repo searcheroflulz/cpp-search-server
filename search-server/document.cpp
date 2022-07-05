@@ -3,7 +3,7 @@
 #include <sstream>
 using namespace std;
 
-Document::Document(int id, double relevance, int rating) : id(id), relevance(relevance), rating(rating) {}
+Document::Document(int id, double relevance, int rating): id(id), relevance(relevance), rating(rating) {}
 
 void PrintDocument(const Document& document) {
     cout << "{ "s

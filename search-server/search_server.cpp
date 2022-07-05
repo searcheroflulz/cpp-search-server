@@ -34,8 +34,27 @@ int SearchServer::GetDocumentCount() const {
     return documents_.size();
 }
 
-int SearchServer::GetDocumentId(int index) const {
-    return document_ids_.at(index);
+vector<int>::const_iterator SearchServer::begin() const {
+    return document_ids_.begin();
+}
+
+vector<int>::const_iterator SearchServer::end() const {
+    return document_ids_.end();
+}
+
+const map<string, double>& SearchServer::GetWordFrequencies(int document_id) const{
+    static map<string, double> word_freq;
+    word_freq.clear();
+    for (auto words: word_to_document_freqs_) {
+        if (words.second.count(document_id))
+            word_freq[words.first] = words.second.at(document_id);
+    }
+    return word_freq;
+}
+
+void SearchServer::RemoveDocument(int document_id) {
+    documents_.erase(document_id);
+    document_ids_.erase(find(document_ids_.begin(), document_ids_.end(), document_id));
 }
 
 tuple<vector<string>, DocumentStatus> SearchServer::MatchDocument(const string& raw_query, int document_id) const {
@@ -90,7 +109,7 @@ int SearchServer::ComputeAverageRating(const vector<int>& ratings) {
         return 0;
     }
     int rating_sum = 0;
-    std::accumulate(ratings.begin(), ratings.end(), rating_sum);
+    rating_sum = std::accumulate(ratings.begin(), ratings.end(), rating_sum);
     return rating_sum / static_cast<int>(ratings.size());
 }
 
