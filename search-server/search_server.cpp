@@ -47,8 +47,9 @@ set<int>::const_iterator SearchServer::end() const {
 const map<string, double>& SearchServer::GetWordFrequencies(int document_id) const {
     static const map<string, double> empty_map;
 
-    if (!words_to_id_.count(document_id))
+    if (!words_to_id_.count(document_id)) {
         return empty_map;
+    }
 
     return words_to_id_.at(document_id);
 }
@@ -56,8 +57,7 @@ const map<string, double>& SearchServer::GetWordFrequencies(int document_id) con
 void SearchServer::RemoveDocument(int document_id) {
     documents_.erase(document_id);
     document_ids_.erase(document_id);
-    for (auto &words: word_to_document_freqs_) {
-        if (words.second.count(document_id))
+    for (auto &words: words_to_id_.at(document_id)) {
             word_to_document_freqs_[words.first].erase(document_id);
     }
     words_to_id_.erase(document_id);
