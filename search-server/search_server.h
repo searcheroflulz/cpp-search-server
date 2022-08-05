@@ -8,6 +8,7 @@
 #include <map>
 #include <string>
 #include <algorithm>
+#include <execution>
 #include "document.h"
 #include "string_processing.h"
 #include "read_input_functions.h"
@@ -35,6 +36,25 @@ public:
     std::set<int>::const_iterator end() const;
     const std::map<std::string, double>& GetWordFrequencies(int document_id) const;
     void RemoveDocument(int document_id);
+
+    template <typename ExecutionPolicy>
+    void RemoveDocument(ExecutionPolicy policy, int document_id) {
+        document_ids_.erase(document_id);
+        std::map<std::string, double> &word_freq = words_to_id_.at(document_id);
+        std::vector<const std::string*> temp;
+        temp.resize(word_freq.size());
+
+        std::transform(policy, word_freq.begin(), word_freq.end(), temp.begin(), [](const std::pair<const std::string, double>& words_to_id){
+            return &words_to_id.first;
+        });
+
+        std::for_each(policy, temp.begin(), temp.end(), [&](const std::string* word){
+            word_to_document_freqs_.at(*word).erase(document_id);
+        });
+
+        words_to_id_.erase(document_id);
+        documents_.erase(document_id);
+    }
 
     std::tuple<std::vector<std::string>, DocumentStatus> MatchDocument(const std::string& raw_query, int document_id) const;
 private:
