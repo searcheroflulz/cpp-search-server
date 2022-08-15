@@ -52,9 +52,9 @@ public:
     std::set<int>::const_iterator begin() const;
     std::set<int>::const_iterator end() const;
     const std::map<std::string_view, double, std::less<>> GetWordFrequencies(int document_id) const;
-    void RemoveDocument(int document_id);
     template <typename ExecutionPolicy>
     void RemoveDocument(ExecutionPolicy policy, int document_id);
+    void RemoveDocument(int document_id);
 
     MatchedDocuments MatchDocument(const std::string_view& raw_query, int document_id) const;
     MatchedDocuments MatchDocument(std::execution::sequenced_policy policy, const std::string_view& raw_query, int document_id) const;
