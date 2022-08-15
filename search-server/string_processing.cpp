@@ -11,6 +11,5 @@ std::vector<std::string_view> SplitIntoWords(const std::string_view& str) {
         words.push_back(space == pos_end ? str.substr(pos) : str.substr(pos, space - pos));
         pos = str.find_first_not_of(" ", space);
     }
-
     return words;
 }
