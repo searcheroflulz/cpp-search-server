@@ -34,26 +34,18 @@ vector<Document> SearchServer::FindTopDocuments(const string_view& raw_query, Do
     });
 }
 
-vector<Document> SearchServer::FindTopDocuments(std::execution::sequenced_policy policy, const string_view& raw_query, DocumentStatus status) const {
-    return FindTopDocuments(std::execution::seq, raw_query, [status](int document_id, DocumentStatus document_status, int rating) {
-        return document_status == status;
-    });
-}
-
 vector<Document> SearchServer::FindTopDocuments(const string_view& raw_query) const {
-    return FindTopDocuments(std::execution::seq, raw_query, DocumentStatus::ACTUAL);
+    return FindTopDocuments(raw_query, DocumentStatus::ACTUAL);
 }
 
-vector<Document> SearchServer::FindTopDocuments(std::execution::sequenced_policy policy, const string_view& raw_query) const {
-    return FindTopDocuments(std::execution::seq, raw_query, DocumentStatus::ACTUAL);
+template <typename ExecutionPolicy>
+vector<Document> SearchServer::FindTopDocuments(ExecutionPolicy policy, const string_view& raw_query) const {
+    return FindTopDocuments(policy, raw_query, DocumentStatus::ACTUAL);
 }
 
-vector<Document> SearchServer::FindTopDocuments(std::execution::parallel_policy policy, const string_view& raw_query) const {
-    return FindTopDocuments(std::execution::par, raw_query, DocumentStatus::ACTUAL);
-}
-
-vector<Document> SearchServer::FindTopDocuments(std::execution::parallel_policy policy, const string_view& raw_query, DocumentStatus status) const {
-    return FindTopDocuments(std::execution::par, raw_query, [status](int document_id, DocumentStatus document_status, int rating) {
+template <typename ExecutionPolicy>
+vector<Document> SearchServer::FindTopDocuments(ExecutionPolicy policy, const string_view& raw_query, DocumentStatus status) const {
+    return FindTopDocuments(policy, raw_query, [status](int document_id, DocumentStatus document_status, int rating) {
         return document_status == status;
     });
 }

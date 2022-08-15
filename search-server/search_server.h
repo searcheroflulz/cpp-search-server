@@ -36,14 +36,17 @@ public:
     template <typename DocumentPredicate>
     std::vector<Document> FindTopDocuments(std::execution::sequenced_policy policy, const std::string_view& raw_query, DocumentPredicate document_predicate) const;
     std::vector<Document> FindTopDocuments(const std::string_view& raw_query, DocumentStatus status) const;
-    std::vector<Document> FindTopDocuments(std::execution::sequenced_policy policy, const std::string_view& raw_query, DocumentStatus status) const;
+
+    template <typename ExecutionPolicy>
+    std::vector<Document> FindTopDocuments(ExecutionPolicy policy, const std::string_view& raw_query, DocumentStatus status) const;
     std::vector<Document> FindTopDocuments(const std::string_view& raw_query) const;
-    std::vector<Document> FindTopDocuments(std::execution::sequenced_policy policy, const std::string_view& raw_query) const;
+
+    template <typename ExecutionPolicy>
+    std::vector<Document> FindTopDocuments(ExecutionPolicy policy, const std::string_view& raw_query) const;
 
     template <typename DocumentPredicate>
     std::vector<Document> FindTopDocuments(std::execution::parallel_policy policy, const std::string_view& raw_query, DocumentPredicate document_predicate) const;
-    std::vector<Document> FindTopDocuments(std::execution::parallel_policy policy, const std::string_view& raw_query, DocumentStatus status) const;
-    std::vector<Document> FindTopDocuments(std::execution::parallel_policy policy, const std::string_view& raw_query) const;
+
     int GetDocumentCount() const;
 
     std::set<int>::const_iterator begin() const;
@@ -52,7 +55,6 @@ public:
     void RemoveDocument(int document_id);
     template <typename ExecutionPolicy>
     void RemoveDocument(ExecutionPolicy policy, int document_id);
-
 
     MatchedDocuments MatchDocument(const std::string_view& raw_query, int document_id) const;
     MatchedDocuments MatchDocument(std::execution::sequenced_policy policy, const std::string_view& raw_query, int document_id) const;
