@@ -87,11 +87,11 @@ void SearchServer::RemoveDocument(int document_id) {
     words_to_id_.erase(document_id);
 }
 
-tuple<vector<string_view>, DocumentStatus> SearchServer::MatchDocument(const string_view& raw_query, int document_id) const {
+MatchedDocuments SearchServer::MatchDocument(const string_view& raw_query, int document_id) const {
     return MatchDocument(execution::seq, raw_query, document_id);
 }
 
-tuple<vector<string_view>, DocumentStatus> SearchServer::MatchDocument(execution::sequenced_policy policy, const string_view& raw_query, int document_id) const {
+MatchedDocuments SearchServer::MatchDocument(execution::sequenced_policy policy, const string_view& raw_query, int document_id) const {
     if (!document_ids_.count(document_id)) {
         throw std::out_of_range("There is no document with such id");
     }
@@ -120,7 +120,7 @@ tuple<vector<string_view>, DocumentStatus> SearchServer::MatchDocument(execution
     return {std::vector<std::string_view> {}, documents_.at(document_id).status};
 }
 
-std::tuple<std::vector<std::string_view>, DocumentStatus> SearchServer::MatchDocument(execution::parallel_policy policy, const std::string_view& raw_query, int document_id) const {
+MatchedDocuments SearchServer::MatchDocument(execution::parallel_policy policy, const std::string_view& raw_query, int document_id) const {
     if (!document_ids_.count(document_id)) {
         throw std::out_of_range("There is no document with such id");
     }
@@ -139,8 +139,8 @@ std::tuple<std::vector<std::string_view>, DocumentStatus> SearchServer::MatchDoc
     if (!matched_words.empty()) {
         auto new_end = std::copy_if(policy, query.plus_words.begin(), query.plus_words.end(),matched_words.begin(),
                                     [&](const auto& plus_word) {
-            return word_to_document_freqs_.at(std::string{plus_word}).count(document_id);
-        });
+                                        return word_to_document_freqs_.at(std::string{plus_word}).count(document_id);
+                                    });
         matched_words.resize(distance(matched_words.begin(), new_end));
 
         set<string_view> no_duplications(matched_words.begin(), matched_words.end());

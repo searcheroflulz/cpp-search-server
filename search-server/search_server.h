@@ -18,6 +18,8 @@
 const int MAX_RESULT_DOCUMENT_COUNT = 5;
 const double SET_PRECISION = 1e-6;
 
+using MatchedDocuments = std::tuple<std::vector<std::string_view>, DocumentStatus>;
+
 class SearchServer {
 public:
     template <typename StringContainer>
@@ -48,29 +50,13 @@ public:
     std::set<int>::const_iterator end() const;
     const std::map<std::string_view, double, std::less<>> GetWordFrequencies(int document_id) const;
     void RemoveDocument(int document_id);
-
     template <typename ExecutionPolicy>
-    void RemoveDocument(ExecutionPolicy policy, int document_id) {
-        document_ids_.erase(document_id);
-        auto &word_freq = words_to_id_.at(document_id);
-        std::vector<const std::string*> temp;
-        temp.resize(word_freq.size());
+    void RemoveDocument(ExecutionPolicy policy, int document_id);
 
-        std::transform(policy, word_freq.begin(), word_freq.end(), temp.begin(), [](const std::pair<const std::string, double>& words_to_id){
-            return &words_to_id.first;
-        });
 
-        std::for_each(policy, temp.begin(), temp.end(), [&](const std::string* word){
-            word_to_document_freqs_.at(*word).erase(document_id);
-        });
-
-        words_to_id_.erase(document_id);
-        documents_.erase(document_id);
-    }
-
-    std::tuple<std::vector<std::string_view>, DocumentStatus> MatchDocument(const std::string_view& raw_query, int document_id) const;
-    std::tuple<std::vector<std::string_view>, DocumentStatus> MatchDocument(std::execution::sequenced_policy policy, const std::string_view& raw_query, int document_id) const;
-    std::tuple<std::vector<std::string_view>, DocumentStatus> MatchDocument(std::execution::parallel_policy policy, const std::string_view& raw_query, int document_id) const;
+    MatchedDocuments MatchDocument(const std::string_view& raw_query, int document_id) const;
+    MatchedDocuments MatchDocument(std::execution::sequenced_policy policy, const std::string_view& raw_query, int document_id) const;
+    MatchedDocuments MatchDocument(std::execution::parallel_policy policy, const std::string_view& raw_query, int document_id) const;
 private:
     struct DocumentData {
         int rating;
@@ -235,4 +221,23 @@ std::vector<Document> SearchServer::FindAllDocuments(std::execution::parallel_po
     });
 
     return matched_documents;
+}
+
+template <typename ExecutionPolicy>
+void SearchServer::RemoveDocument(ExecutionPolicy policy, int document_id) {
+    document_ids_.erase(document_id);
+    auto &word_freq = words_to_id_.at(document_id);
+    std::vector<const std::string*> temp;
+    temp.resize(word_freq.size());
+
+    std::transform(policy, word_freq.begin(), word_freq.end(), temp.begin(), [](const std::pair<const std::string, double>& words_to_id){
+        return &words_to_id.first;
+    });
+
+    std::for_each(policy, temp.begin(), temp.end(), [&](const std::string* word){
+        word_to_document_freqs_.at(*word).erase(document_id);
+    });
+
+    words_to_id_.erase(document_id);
+    documents_.erase(document_id);
 }
